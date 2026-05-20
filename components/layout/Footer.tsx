@@ -35,11 +35,11 @@ export default function Footer() {
           </div>
 
           <div className="flex justify-center md:justify-end gap-6 items-center">
-            <Link href="https://github.com/osama" target="_blank" rel="noreferrer" className="text-white/30 hover:text-white transition-colors">
+            <Link href="https://github.com/OsamaEllafi" target="_blank" rel="noreferrer" className="text-white/30 hover:text-white transition-colors">
               <FaGithub size={18} />
               <span className="sr-only">GitHub</span>
             </Link>
-            <Link href="https://linkedin.com/in/osama" target="_blank" rel="noreferrer" className="text-white/30 hover:text-white transition-colors">
+            <Link href="https://www.linkedin.com/in/osama-ellafi-043958315/" target="_blank" rel="noreferrer" className="text-white/30 hover:text-white transition-colors">
               <FaLinkedin size={18} />
               <span className="sr-only">LinkedIn</span>
             </Link>

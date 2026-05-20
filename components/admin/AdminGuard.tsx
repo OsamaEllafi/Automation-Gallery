@@ -21,6 +21,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       if (currentUser) {
         // Validate admin email
         const allowedEmails = [
+          "osama.ellafi@gmail.com",
           "osama@autonomix.ly",
           process.env.NEXT_PUBLIC_ADMIN_EMAIL
         ].filter(Boolean);

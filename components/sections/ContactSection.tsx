@@ -62,15 +62,15 @@ export default function ContactSection() {
         </p>
 
         <div className="flex justify-center gap-4 mb-12">
-          <Link href="https://github.com/osama" target="_blank" className="glass px-6 py-3 rounded-full flex items-center gap-2 hover:border-primary/20 transition-colors">
+          <Link href="https://github.com/OsamaEllafi" target="_blank" className="glass px-6 py-3 rounded-full flex items-center gap-2 hover:border-primary/20 transition-colors">
             <FaGithub size={16} className="text-primary" />
             <span className="font-[family-name:var(--font-orbitron)] text-[10px] uppercase tracking-wider text-primary">GitHub</span>
           </Link>
-          <Link href="https://linkedin.com/in/osama" target="_blank" className="glass px-6 py-3 rounded-full flex items-center gap-2 hover:border-primary/20 transition-colors">
+          <Link href="https://www.linkedin.com/in/osama-ellafi-043958315/" target="_blank" className="glass px-6 py-3 rounded-full flex items-center gap-2 hover:border-primary/20 transition-colors">
             <FaLinkedin size={16} className="text-primary" />
             <span className="font-[family-name:var(--font-orbitron)] text-[10px] uppercase tracking-wider text-primary">LinkedIn</span>
           </Link>
-          <Link href="mailto:contact@autonomix.ly" className="glass px-6 py-3 rounded-full flex items-center gap-2 hover:border-primary/20 transition-colors">
+          <Link href="mailto:osama.ellafi@gmail.com" className="glass px-6 py-3 rounded-full flex items-center gap-2 hover:border-primary/20 transition-colors">
             <FaEnvelope size={16} className="text-primary" />
             <span className="font-[family-name:var(--font-orbitron)] text-[10px] uppercase tracking-wider text-primary">Email</span>
           </Link>
