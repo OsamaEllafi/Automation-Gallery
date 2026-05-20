@@ -120,6 +120,11 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
     }
   }, [name, isEditing, workflowId]);
 
+  // Automatically sync totalNodes count with the number of nodes in the builder
+  useEffect(() => {
+    setTotalNodes(nodes.length);
+  }, [nodes.length]);
+
   // Handle Tag Input Change
   const getTagsArray = () => {
     return tagsInput
