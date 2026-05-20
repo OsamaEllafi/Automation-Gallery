@@ -72,12 +72,37 @@ export const STATS_COLLECTION = "site_stats";
 export const GLOBAL_STATS_DOC = "global";
 
 export async function getSiteStats(): Promise<SiteStats | null> {
-  const docRef = doc(db, STATS_COLLECTION, GLOBAL_STATS_DOC);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return docSnap.data() as SiteStats;
+  try {
+    const q = query(collection(db, WORKFLOWS_COLLECTION), where("status", "==", "live"));
+    const querySnapshot = await getDocs(q);
+    const workflows = querySnapshot.docs.map(doc => doc.data() as Workflow);
+    
+    const total_workflows = workflows.length;
+    let total_nodes = 0;
+    const categoriesSet = new Set<string>();
+    let total_automation = 0;
+    
+    workflows.forEach(w => {
+      total_nodes += w.total_nodes || 0;
+      if (w.category) {
+        categoriesSet.add(w.category);
+      }
+      total_automation += w.automation_percentage || 0;
+    });
+    
+    const categories = Array.from(categoriesSet);
+    const avg_automation = total_workflows > 0 ? Math.round(total_automation / total_workflows) : 0;
+    
+    return {
+      total_workflows,
+      total_nodes,
+      categories,
+      avg_automation
+    };
+  } catch (err) {
+    console.error("Error calculating dynamic site stats:", err);
+    return null;
   }
-  return null;
 }
 
 // Contact Messages Collection

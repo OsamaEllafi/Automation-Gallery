@@ -41,6 +41,7 @@ export interface SiteStats {
   total_workflows: number;
   total_nodes: number;
   categories: string[];
+  avg_automation: number;
   last_updated?: Timestamp | Date;
 }
 

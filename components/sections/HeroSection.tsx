@@ -17,7 +17,7 @@ export default function HeroSection() {
     const targetWorkflows = dbStats ? dbStats.total_workflows : 3;
     const targetNodes = dbStats ? dbStats.total_nodes : 54;
     const targetCategories = dbStats ? dbStats.categories.length : 3;
-    const targetAutomation = 91; // Standard high level optimization avg
+    const targetAutomation = dbStats ? dbStats.avg_automation : 91; // Dynamically computed average
 
     const controlsWorkflows = animate(0, targetWorkflows, {
       duration: 1.5,
