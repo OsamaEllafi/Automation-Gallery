@@ -2,5 +2,27 @@
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/gallery/:id",
+        "destination": "/gallery/[id]/index.html"
+      },
+      {
+        "source": "/admin/edit/:id",
+        "destination": "/admin/edit/[id]/index.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
