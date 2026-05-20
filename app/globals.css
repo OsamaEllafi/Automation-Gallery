@@ -1,26 +1,127 @@
 @import "tailwindcss";
 
+@theme {
+  --font-orbitron: "Orbitron", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Backgrounds */
+  --bg-dark: #f5f6f8;           /* Page canvas — soft off-white */
+  --bg-card: rgba(255, 255, 255, 0.8); /* Glass cards */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Brand Colors (monochrome only — no color accents ever) */
+  --primary: #0f1117;           /* Deep near-black charcoal — headings, CTAs, active elements */
+  --secondary: #3b3f51;         /* Dark slate — secondary emphasis */
+  --accent: #5a5f73;            /* Mid-tone gray — decorative, tertiary elements */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Text */
+  --text-main: #0f1117;         /* Primary copy */
+  --text-dim: #6b7085;          /* Descriptions, secondary info, placeholders */
+
+  /* Borders */
+  --glass-border: rgba(15, 17, 23, 0.07);
+
+  /* Admin / Status (the ONLY place non-monochrome is allowed) */
+  --status-live: #16a34a;
+  --status-draft: #d97706;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-inter);
+  background-image: radial-gradient(rgba(15, 17, 23, 0.04) 2px, transparent 2px);
+  background-size: 24px 24px;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-orbitron);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+}
+
+/* Glassmorphism Classes */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(15, 17, 23, 0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.glass:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border-color: rgba(15, 17, 23, 0.12);
+}
+
+.glass-premium {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid transparent;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.glass-premium:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.10);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--primary);
+  color: #ffffff;
+  border-radius: 50px;
+  padding: 12px 28px;
+  font-family: var(--font-orbitron);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  box-shadow: 0 4px 16px rgba(15, 17, 23, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.btn-primary:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 8px 24px rgba(15, 17, 23, 0.25); 
+}
+
+.btn-outline {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(15, 17, 23, 0.12);
+  color: var(--primary);
+  border-radius: 50px;
+  padding: 12px 28px;
+  font-family: var(--font-orbitron);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.btn-outline:hover { 
+  background: rgba(255, 255, 255, 0.9); 
+  border-color: rgba(15, 17, 23, 0.25); 
+}
+
+/* Utilities */
+.text-main { color: var(--text-main); }
+.text-dim { color: var(--text-dim); }
+.text-primary { color: var(--primary); }
+.text-secondary { color: var(--secondary); }
+.bg-dark { background-color: var(--bg-dark); }
+.bg-primary { background-color: var(--primary); }
+.border-glass { border-color: var(--glass-border); }
