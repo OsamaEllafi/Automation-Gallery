@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaBars, FaTimes } from "react-icons/fa";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -16,6 +18,11 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const navLinks = [
     { name: "Terminal", href: "/" },
@@ -32,8 +39,8 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
         className={`
-          flex items-center justify-between px-6 py-3 rounded-full w-full max-w-[720px] transition-all duration-300
-          ${scrolled ? "bg-white/80 backdrop-blur-xl shadow-lg border border-glass" : "bg-white/50 backdrop-blur-md border border-transparent"}
+          flex items-center justify-between px-6 py-3 rounded-full w-full max-w-[720px] transition-all duration-300 relative
+          ${scrolled || mobileMenuOpen ? "bg-white/90 backdrop-blur-xl shadow-lg border border-glass" : "bg-white/50 backdrop-blur-md border border-transparent"}
         `}
       >
         <Link href="/" className="flex flex-col">
@@ -45,6 +52,7 @@ export default function Navbar() {
           </span>
         </Link>
 
+        {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || (pathname.startsWith("/gallery") && link.href === "/gallery");
@@ -65,7 +73,42 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Mobile menu toggle could go here, omitting for simplicity of this initial layout */}
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden text-primary hover:text-secondary focus:outline-none p-1 transition-colors"
+          aria-label="Toggle Navigation Menu"
+        >
+          {mobileMenuOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
+        </button>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-[60px] left-0 w-full glass rounded-[24px] p-6 flex flex-col gap-4 shadow-xl z-50 md:hidden"
+            >
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href || (pathname.startsWith("/gallery") && link.href === "/gallery");
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className={`font-[family-name:var(--font-orbitron)] text-[13px] uppercase tracking-widest py-2 border-b border-glass/40 transition-colors ${
+                      isActive ? "text-primary font-bold" : "text-dim hover:text-primary"
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
     </div>
   );

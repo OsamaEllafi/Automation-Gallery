@@ -1,10 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaChevronLeft, FaChevronRight, FaChevronUp } from "react-icons/fa";
 import { useWorkflow, useAllWorkflows } from "@/hooks/useWorkflows";
 import NodeMapSVG from "@/components/sections/NodeMapSVG";
+import { getWorkflowsByIds } from "@/lib/firestore";
+import { Workflow } from "@/types/workflow";
 
 interface ExhibitRoomClientProps {
   id: string;
@@ -14,10 +17,40 @@ export default function ExhibitRoomClient({ id }: ExhibitRoomClientProps) {
   const { workflow, loading } = useWorkflow(id);
   const { workflows } = useAllWorkflows();
 
+  const [relatedWorkflows, setRelatedWorkflows] = useState<Workflow[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
   // Find next and previous exhibits
   const currentIndex = workflows.findIndex(w => w.workflow_id === id);
   const prevWorkflow = currentIndex > 0 ? workflows[currentIndex - 1] : null;
   const nextWorkflow = currentIndex >= 0 && currentIndex < workflows.length - 1 ? workflows[currentIndex + 1] : null;
+
+  // Load related workflows
+  useEffect(() => {
+    if (workflow?.related_workflow_ids && workflow.related_workflow_ids.length > 0) {
+      setLoadingRelated(true);
+      getWorkflowsByIds(workflow.related_workflow_ids)
+        .then(res => setRelatedWorkflows(res))
+        .catch(err => console.error("Error loading related workflows:", err))
+        .finally(() => setLoadingRelated(false));
+    } else {
+      setRelatedWorkflows([]);
+    }
+  }, [workflow?.related_workflow_ids]);
+
+  // Scroll to top state listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   if (loading) {
     return (
@@ -71,12 +104,26 @@ export default function ExhibitRoomClient({ id }: ExhibitRoomClientProps) {
           {workflow.short_description}
         </p>
 
-        <div className="flex flex-wrap gap-4 font-[family-name:var(--font-orbitron)] text-[10px] text-dim uppercase tracking-wider">
+        <div className="flex flex-wrap gap-3 font-[family-name:var(--font-orbitron)] text-[9px] text-dim uppercase tracking-wider">
           <span className="glass px-3 py-1 rounded-full">{workflow.trigger_type} Trigger</span>
           <span className="glass px-3 py-1 rounded-full">Built: {workflow.date_built}</span>
           <span className="glass px-3 py-1 rounded-full">{workflow.total_nodes} Nodes</span>
           <span className="glass px-3 py-1 rounded-full">{workflow.automation_percentage}% Automated</span>
+          <span className="glass px-3 py-1 rounded-full bg-primary/5 text-primary border border-glass font-bold">
+            COMPLEXITY: {["BASIC", "INTERMEDIATE", "ADVANCED", "EXPERT", "MASTER"][(workflow.complexity_score || 3) - 1]}
+          </span>
         </div>
+
+        {/* Display Tags */}
+        {workflow.tags && workflow.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {workflow.tags.map(tag => (
+              <span key={tag} className="text-[9px] font-[family-name:var(--font-orbitron)] bg-black/5 text-dim border border-glass/40 px-2.5 py-1 rounded-md tracking-wider">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Block A: Node Diagram */}
@@ -147,6 +194,119 @@ export default function ExhibitRoomClient({ id }: ExhibitRoomClientProps) {
         </motion.div>
       )}
 
+      {/* Block D: Video Demo & Download JSON */}
+      {(workflow.demo_video_url || workflow.json_export_url) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16"
+        >
+          <div className="glass p-6 rounded-2xl flex flex-col gap-4">
+            <span className="font-[family-name:var(--font-orbitron)] text-[10px] tracking-widest text-dim uppercase">
+              SYSTEM IN ACTION
+            </span>
+            {workflow.demo_video_url ? (
+              <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/10 border border-glass">
+                {workflow.demo_video_url.includes("youtube.com") || workflow.demo_video_url.includes("youtu.be") ? (
+                  <iframe
+                    src={workflow.demo_video_url.includes("watch?v=") 
+                      ? workflow.demo_video_url.replace("watch?v=", "embed/") 
+                      : workflow.demo_video_url.replace("youtu.be/", "youtube.com/embed/")}
+                    className="absolute inset-0 w-full h-full border-0"
+                    allowFullScreen
+                    title="Demo Video"
+                  />
+                ) : (
+                  <video
+                    src={workflow.demo_video_url}
+                    controls
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col justify-center items-center text-center py-8 opacity-60">
+                <p className="font-[family-name:var(--font-inter)] text-xs text-dim">No video demonstration available for this exhibit.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="glass p-6 rounded-2xl flex flex-col justify-between gap-6">
+            <div>
+              <span className="font-[family-name:var(--font-orbitron)] text-[10px] tracking-widest text-dim uppercase block mb-3">
+                INTELLIGENT SYSTEM EXPORT
+              </span>
+              <p className="font-[family-name:var(--font-inter)] text-xs text-dim leading-relaxed">
+                Download the blueprint JSON of this n8n automation pipeline. You can import this directly into your n8n workspace to instantiate the workflow structure.
+              </p>
+            </div>
+            {workflow.json_export_url ? (
+              <a
+                href={workflow.json_export_url}
+                download
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary w-full text-center flex items-center justify-center gap-2 py-3.5"
+              >
+                DOWNLOAD WORKFLOW JSON
+              </a>
+            ) : (
+              <button
+                disabled
+                className="btn-outline w-full cursor-not-allowed opacity-50 text-center flex items-center justify-center gap-2 py-3.5"
+              >
+                BLUEPRINT NOT PUBLICLY AVAILABLE
+              </button>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Block E: Related Workflows */}
+      {relatedWorkflows.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="mb-16 border-t border-glass pt-12"
+        >
+          <span className="font-[family-name:var(--font-orbitron)] text-[10px] tracking-widest text-dim uppercase mb-6 block">
+            RELATED WORKFLOWS
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {relatedWorkflows.map((rw) => (
+              <Link href={`/gallery/${rw.workflow_id}`} key={rw.workflow_id}>
+                <div className="glass p-6 rounded-2xl hover:border-primary/20 transition-all flex flex-col h-full justify-between cursor-pointer group">
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="font-[family-name:var(--font-orbitron)] text-[9px] uppercase glass px-2.5 py-0.5 rounded-full text-primary font-bold">
+                        {rw.workflow_id}
+                      </span>
+                      <span className="font-[family-name:var(--font-orbitron)] text-[9px] uppercase text-dim tracking-wider">
+                        {rw.category}
+                      </span>
+                    </div>
+                    <h4 className="font-[family-name:var(--font-orbitron)] font-bold text-sm text-primary mb-2 group-hover:text-primary transition-colors">
+                      {rw.name}
+                    </h4>
+                    <p className="font-[family-name:var(--font-inter)] text-xs text-dim line-clamp-2">
+                      {rw.short_description}
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-glass/40 flex justify-between items-center text-[9px] font-[family-name:var(--font-orbitron)] text-dim uppercase">
+                    <span>{rw.total_nodes} nodes</span>
+                    <span className="text-primary font-bold group-hover:underline">View Exhibit →</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Navigation Footer */}
       <div className="flex justify-between items-center border-t border-glass pt-8 mt-16">
         {prevWorkflow ? (
@@ -164,6 +324,22 @@ export default function ExhibitRoomClient({ id }: ExhibitRoomClientProps) {
           <div className="opacity-0 pointer-events-none" />
         )}
       </div>
+
+      {/* Floating Back to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={scrollToTop}
+            className="fixed bottom-6 right-6 z-[100] glass p-3.5 rounded-full shadow-lg text-primary hover:border-primary/30 transition-all cursor-pointer"
+            aria-label="Scroll to top"
+          >
+            <FaChevronUp size={14} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
     </div>
   );

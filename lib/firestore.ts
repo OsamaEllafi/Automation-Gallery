@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, startAfter, setDoc, updateDoc, deleteDoc, Timestamp, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
-import { Workflow, SiteStats } from "@/types/workflow";
+import { Workflow, SiteStats, ContactMessage } from "@/types/workflow";
 
 // Workflows Collection
 export const WORKFLOWS_COLLECTION = "workflows";
@@ -115,4 +115,27 @@ export async function submitContactMessage(message: { name: string; email: strin
     submitted_at: Timestamp.now(),
     read: false
   });
+}
+
+export async function getContactMessages(): Promise<(ContactMessage & { id: string })[]> {
+  const q = query(collection(db, "contact_messages"), orderBy("submitted_at", "desc"));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactMessage & { id: string }));
+}
+
+export async function markContactMessageAsRead(id: string): Promise<void> {
+  const docRef = doc(db, "contact_messages", id);
+  await updateDoc(docRef, { read: true });
+}
+
+export async function deleteContactMessage(id: string): Promise<void> {
+  const docRef = doc(db, "contact_messages", id);
+  await deleteDoc(docRef);
+}
+
+export async function getWorkflowsByIds(ids: string[]): Promise<Workflow[]> {
+  if (!ids || ids.length === 0) return [];
+  const promises = ids.map(id => getWorkflow(id));
+  const results = await Promise.all(promises);
+  return results.filter((w): w is Workflow => w !== null);
 }

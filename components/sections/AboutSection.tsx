@@ -1,9 +1,48 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useInView, animate } from "framer-motion";
 import Link from "next/link";
+import { useRef, useState, useEffect } from "react";
 
 export default function AboutSection() {
+  const statsRef = useRef(null);
+  const isInView = useInView(statsRef, { once: true, margin: "-50px" });
+
+  const [stats, setStats] = useState({ tasks: 0, hours: 0, reliability: 0 });
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    const controlsTasks = animate(0, 2000000, {
+      duration: 2,
+      ease: "easeOut",
+      onUpdate: (value) => setStats(prev => ({ ...prev, tasks: Math.floor(value) }))
+    });
+
+    const controlsHours = animate(0, 10000, {
+      duration: 2,
+      ease: "easeOut",
+      onUpdate: (value) => setStats(prev => ({ ...prev, hours: Math.floor(value) }))
+    });
+
+    const controlsReliability = animate(0, 99.9, {
+      duration: 2.2,
+      ease: "easeOut",
+      onUpdate: (value) => setStats(prev => ({ ...prev, reliability: parseFloat(value.toFixed(1)) }))
+    });
+
+    return () => {
+      controlsTasks.stop();
+      controlsHours.stop();
+      controlsReliability.stop();
+    };
+  }, [isInView]);
+
+  const formatTasks = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1).replace(".0", "")}M+`;
+    return num.toLocaleString();
+  };
+
   return (
     <section className="py-24 px-6 bg-white/30 border-y border-glass">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
@@ -47,6 +86,7 @@ export default function AboutSection() {
         </motion.div>
 
         <motion.div
+          ref={statsRef}
           initial={{ opacity: 0, x: 24 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -55,13 +95,20 @@ export default function AboutSection() {
         >
           {/* Abstract visual representation instead of image */}
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)]" />
-          <h3 className="font-[family-name:var(--font-orbitron)] text-3xl font-bold text-primary mb-2 relative z-10">2M+</h3>
+          
+          <h3 className="font-[family-name:var(--font-orbitron)] text-3xl font-bold text-primary mb-2 relative z-10">
+            {formatTasks(stats.tasks)}
+          </h3>
           <p className="font-[family-name:var(--font-orbitron)] text-[10px] tracking-widest text-dim uppercase relative z-10 mb-8">Tasks Automated</p>
           
-          <h3 className="font-[family-name:var(--font-orbitron)] text-3xl font-bold text-primary mb-2 relative z-10">10,000+</h3>
+          <h3 className="font-[family-name:var(--font-orbitron)] text-3xl font-bold text-primary mb-2 relative z-10">
+            {stats.hours.toLocaleString()}+
+          </h3>
           <p className="font-[family-name:var(--font-orbitron)] text-[10px] tracking-widest text-dim uppercase relative z-10 mb-8">Hours Saved</p>
           
-          <h3 className="font-[family-name:var(--font-orbitron)] text-3xl font-bold text-primary mb-2 relative z-10">99.9%</h3>
+          <h3 className="font-[family-name:var(--font-orbitron)] text-3xl font-bold text-primary mb-2 relative z-10">
+            {stats.reliability}%
+          </h3>
           <p className="font-[family-name:var(--font-orbitron)] text-[10px] tracking-widest text-dim uppercase relative z-10">System Reliability</p>
         </motion.div>
       </div>

@@ -69,13 +69,32 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-10 overflow-hidden">
       
+      {/* Animated radial background glow */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <motion.div
+          animate={{
+            scale: [1, 1.15, 1],
+            opacity: [0.15, 0.28, 0.15],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(15,17,23,0.06)_0%,transparent_60%)] blur-[50px]"
+        />
+      </div>
+
       {/* Decorative watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <span 
-          className="font-[family-name:var(--font-orbitron)] font-bold uppercase text-[clamp(80px,15vw,180px)] text-[#0f1117] opacity-[0.025] select-none text-center leading-none tracking-tight"
+        <motion.span 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 0.04, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          className="font-[family-name:var(--font-orbitron)] font-bold uppercase text-[clamp(80px,15vw,180px)] text-[#0f1117] select-none text-center leading-none tracking-tight blur-[1px]"
         >
           AUTOMATION
-        </span>
+        </motion.span>
       </div>
 
       <motion.div 

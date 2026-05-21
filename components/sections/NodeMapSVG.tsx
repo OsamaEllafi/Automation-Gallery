@@ -35,12 +35,13 @@ export default function NodeMapSVG({ nodes, primaryIntegration }: NodeMapSVGProp
   }
 
   // Calculate layout coordinates
-  const canvasWidth = 800;
-  const canvasHeight = 400;
   const maxNodesPerRow = 5;
+  const isSingleRow = nodes.length <= maxNodesPerRow;
+  const canvasWidth = 800;
+  const canvasHeight = isSingleRow ? 180 : 400;
 
   const getCoordinates = (index: number, total: number) => {
-    if (total <= maxNodesPerRow) {
+    if (isSingleRow) {
       // Single row layout
       const spacing = canvasWidth / (total + 1);
       return {
@@ -171,7 +172,7 @@ export default function NodeMapSVG({ nodes, primaryIntegration }: NodeMapSVGProp
   return (
     <div className="w-full flex flex-col gap-6">
       {/* SVG Canvas Container */}
-      <div className="relative w-full aspect-[2/1] bg-black/40 border border-glass rounded-[24px] overflow-hidden p-4">
+      <div className={`relative w-full ${isSingleRow ? "aspect-[4/1] min-h-[140px]" : "aspect-[2/1]"} bg-black/40 border border-glass rounded-[24px] overflow-hidden p-4`}>
         <svg
           viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
           className="w-full h-full"

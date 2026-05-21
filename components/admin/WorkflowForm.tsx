@@ -104,6 +104,11 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
   const [solution, setSolution] = useState(initialData?.solution || "");
   const [notes, setNotes] = useState(initialData?.notes || "");
 
+  // Media, Downloads & Relationships
+  const [demoVideoUrl, setDemoVideoUrl] = useState(initialData?.demo_video_url || "");
+  const [jsonExportUrl, setJsonExportUrl] = useState(initialData?.json_export_url || "");
+  const [relatedWorkflowIdsInput, setRelatedWorkflowIdsInput] = useState(initialData?.related_workflow_ids?.join(", ") || "");
+
   // UI state
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -203,6 +208,9 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
         problem: problem.trim(),
         solution: solution.trim(),
         notes: notes.trim() || null,
+        demo_video_url: demoVideoUrl.trim() || null,
+        json_export_url: jsonExportUrl.trim() || null,
+        related_workflow_ids: relatedWorkflowIdsInput.split(",").map(id => id.trim().toUpperCase()).filter(Boolean),
         created_at: initialData?.created_at || undefined
       };
 
@@ -612,6 +620,46 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
               placeholder="Additional deployment parameters, security configurations, or n8n details."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* MEDIA, DOWNLOADS & RELATIONSHIPS */}
+        <div>
+          <h3 className="font-[family-name:var(--font-orbitron)] text-xs text-dim uppercase tracking-widest border-b border-glass pb-2 mb-6">
+            VII. MEDIA, DOWNLOADS & RELATIONSHIPS
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="flex flex-col gap-2">
+              <label className="font-[family-name:var(--font-inter)] text-xs text-dim uppercase tracking-wider">Demo Video URL</label>
+              <input 
+                type="url" 
+                className="bg-black/5 border border-glass rounded-xl px-4 py-3 font-[family-name:var(--font-inter)] text-sm focus:outline-none focus:border-primary/30"
+                placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                value={demoVideoUrl}
+                onChange={(e) => setDemoVideoUrl(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="font-[family-name:var(--font-inter)] text-xs text-dim uppercase tracking-wider">JSON Export URL</label>
+              <input 
+                type="url" 
+                className="bg-black/5 border border-glass rounded-xl px-4 py-3 font-[family-name:var(--font-inter)] text-sm focus:outline-none focus:border-primary/30"
+                placeholder="e.g. https://firebasestorage.googleapis.com/.../workflow.json"
+                value={jsonExportUrl}
+                onChange={(e) => setJsonExportUrl(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="font-[family-name:var(--font-inter)] text-xs text-dim uppercase tracking-wider">Related Workflow IDs (comma-separated)</label>
+            <input 
+              type="text" 
+              className="bg-black/5 border border-glass rounded-xl px-4 py-3 font-[family-name:var(--font-inter)] text-sm focus:outline-none focus:border-primary/30"
+              placeholder="e.g. WF-CRM-ROUTER, WF-LEAD-SCORE"
+              value={relatedWorkflowIdsInput}
+              onChange={(e) => setRelatedWorkflowIdsInput(e.target.value)}
             />
           </div>
         </div>
