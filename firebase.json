@@ -19,10 +19,6 @@
       {
         "source": "/admin/edit/:id",
         "destination": "/admin/edit/[id]/index.html"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
       }
     ]
   }
