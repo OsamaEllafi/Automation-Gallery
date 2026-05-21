@@ -4,68 +4,13 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useAllWorkflows, useLiveWorkflows } from "@/hooks/useWorkflows";
-import { 
-  FaPlay, FaClock, FaLink, FaSlack, FaEnvelope, FaCode, 
-  FaDatabase, FaCheckCircle, FaTrello, FaGithub, FaRobot, 
-  FaWhatsapp, FaFilter, FaListUl, FaArrowRight,
-  FaExchangeAlt, FaSearch, FaSort
-} from "react-icons/fa";
+import { FaArrowRight, FaSearch, FaSort } from "react-icons/fa";
 import { Workflow } from "@/types/workflow";
+import NodeMapSVG from "@/components/sections/NodeMapSVG";
 
 interface GallerySectionProps {
   featuredOnly?: boolean;
 }
-
-const getMiniNodeIcon = (label: string, type: string) => {
-  const lowerLabel = label.toLowerCase();
-  if (type === "trigger") {
-    if (lowerLabel.includes("schedule") || lowerLabel.includes("cron") || lowerLabel.includes("time") || lowerLabel.includes("clock")) {
-      return <FaClock className="text-[10px] text-[#ff6d5a]" />;
-    }
-    if (lowerLabel.includes("webhook") || lowerLabel.includes("api") || lowerLabel.includes("receive")) {
-      return <FaLink className="text-[10px] text-[#ff6d5a]" />;
-    }
-    return <FaPlay className="text-[10px] text-[#ff6d5a]" />;
-  }
-  
-  if (type === "condition" || lowerLabel.includes("if") || lowerLabel.includes("switch") || lowerLabel.includes("filter")) {
-    return <FaFilter className="text-[10px] text-amber-500" />;
-  }
-  
-  if (lowerLabel.includes("slack")) return <FaSlack className="text-[10px] text-purple-400" />;
-  if (lowerLabel.includes("gmail") || lowerLabel.includes("mail") || lowerLabel.includes("email")) return <FaEnvelope className="text-[10px] text-red-400" />;
-  if (lowerLabel.includes("sheet") || lowerLabel.includes("excel")) return <FaListUl className="text-[10px] text-emerald-400" />;
-  if (lowerLabel.includes("airtable")) return <FaExchangeAlt className="text-[10px] text-cyan-400" />;
-  if (lowerLabel.includes("trello")) return <FaTrello className="text-[10px] text-blue-400" />;
-  if (lowerLabel.includes("github")) return <FaGithub className="text-[10px] text-neutral-300" />;
-  if (lowerLabel.includes("openai") || lowerLabel.includes("gpt") || lowerLabel.includes("ai") || lowerLabel.includes("llm")) return <FaRobot className="text-[10px] text-purple-300" />;
-  if (lowerLabel.includes("whatsapp")) return <FaWhatsapp className="text-[10px] text-green-400" />;
-  if (lowerLabel.includes("database") || lowerLabel.includes("postgres") || lowerLabel.includes("sql") || lowerLabel.includes("mysql")) return <FaDatabase className="text-[10px] text-blue-400" />;
-  if (lowerLabel.includes("code") || lowerLabel.includes("js") || lowerLabel.includes("javascript") || lowerLabel.includes("python")) return <FaCode className="text-[10px] text-indigo-400" />;
-  
-  if (type === "output" || lowerLabel.includes("complete") || lowerLabel.includes("end") || lowerLabel.includes("finish")) {
-    return <FaCheckCircle className="text-[10px] text-[#10b981]" />;
-  }
-  
-  return <FaCode className="text-[10px] text-neutral-400" />;
-};
-
-const getMiniNodeColor = (type: string) => {
-  switch (type) {
-    case "trigger":
-      return "#ff6d5a";
-    case "condition":
-      return "#ffb300";
-    case "integration":
-      return "#6366f1";
-    case "action":
-      return "#06b6d4";
-    case "output":
-      return "#10b981";
-    default:
-      return "#9ca3af";
-  }
-};
 
 export default function GallerySection({ featuredOnly = false }: GallerySectionProps) {
   // Load data differently based on view requirements
@@ -346,99 +291,7 @@ export default function GallerySection({ featuredOnly = false }: GallerySectionP
                   </div>
 
                   {/* Mini visual representation of nodes */}
-                  {(() => {
-                    const nodes = workflow.node_map_data || [];
-                    const displayNodes = nodes.length > 0 ? nodes.slice(0, 4) : [{ label: "Trigger", type: "trigger" }];
-                    
-                    const canvasWidth = 240;
-                    const canvasHeight = 120;
-                    const spacing = canvasWidth / (displayNodes.length + 1);
-                    
-                    const coords = displayNodes.map((n, idx) => ({
-                      ...n,
-                      x: spacing * (idx + 1),
-                      y: canvasHeight / 2 - 5
-                    }));
-                    
-                    let pathD = "";
-                    if (coords.length > 1) {
-                      pathD = `M ${coords[0].x} ${coords[0].y}`;
-                      for (let i = 1; i < coords.length; i++) {
-                        pathD += ` L ${coords[i].x} ${coords[i].y}`;
-                      }
-                    }
-
-                    return (
-                      <div className="w-full h-[180px] bg-black/90 border border-glass rounded-xl mb-6 flex items-center justify-center p-2 overflow-hidden relative">
-                        <svg viewBox={`0 0 ${canvasWidth} ${canvasHeight}`} className="w-full h-full">
-                          {/* Grid pattern background */}
-                          <defs>
-                            <pattern id={`mini-grid-${workflow.workflow_id}-${index}`} width="16" height="16" patternUnits="userSpaceOnUse">
-                              <circle cx="2" cy="2" r="0.8" fill="rgba(255, 255, 255, 0.05)" />
-                            </pattern>
-                          </defs>
-                          <rect width="100%" height="100%" fill={`url(#mini-grid-${workflow.workflow_id}-${index})`} />
-
-                          {/* Connection Line */}
-                          {pathD && (
-                            <>
-                              <path
-                                  d={pathD}
-                                  fill="none"
-                                  stroke="rgba(255, 255, 255, 0.08)"
-                                  strokeWidth="3"
-                                />
-                                <path
-                                  d={pathD}
-                                  fill="none"
-                                  stroke="rgba(255, 255, 255, 0.25)"
-                                  strokeWidth="1.5"
-                                  strokeDasharray="4, 4"
-                                />
-                            </>
-                          )}
-
-                          {/* Node Badges */}
-                          {coords.map((n, idx) => {
-                            const color = getMiniNodeColor(n.type);
-                            return (
-                              <g key={idx}>
-                                {/* Inner Circle background */}
-                                <circle
-                                  cx={n.x}
-                                  cy={n.y}
-                                  r={13}
-                                  fill="rgba(15, 17, 23, 0.95)"
-                                  stroke={color}
-                                  strokeWidth="1.25"
-                                />
-                                {/* Brand Icon */}
-                                <foreignObject x={n.x - 7} y={n.y - 7} width={14} height={14}>
-                                  <div className="flex items-center justify-center h-full w-full opacity-90">
-                                    {getMiniNodeIcon(n.label, n.type)}
-                                  </div>
-                                </foreignObject>
-                                
-                                {/* Short label */}
-                                <text
-                                  x={n.x}
-                                  y={n.y + 24}
-                                  fill="rgba(255, 255, 255, 0.4)"
-                                  fontSize="6"
-                                  fontWeight="bold"
-                                  fontFamily="var(--font-orbitron)"
-                                  textAnchor="middle"
-                                  className="uppercase tracking-wider"
-                                >
-                                  {n.label.length > 10 ? n.label.slice(0, 8) + ".." : n.label}
-                                </text>
-                              </g>
-                            );
-                          })}
-                        </svg>
-                      </div>
-                    );
-                  })()}
+                  <NodeMapSVG nodes={workflow.node_map_data} mode="thumbnail" />
 
                   <h3 className="font-[family-name:var(--font-orbitron)] font-semibold text-main mb-2 text-md leading-tight group-hover:text-primary transition-colors">
                     {workflow.name}

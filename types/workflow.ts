@@ -1,9 +1,17 @@
 import { Timestamp } from "firebase/firestore";
 
 export interface NodeMapItem {
+  id?: string;
   label: string;
   type: "trigger" | "action" | "integration" | "condition" | "output";
   order: number;
+  description?: string;
+  connections?: string[];
+  branch?: string;
+  position?: {
+    x: number;
+    y: number;
+  };
 }
 
 export interface Workflow {

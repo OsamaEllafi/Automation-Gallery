@@ -140,6 +140,17 @@ export default function ExhibitRoomClient({ id }: ExhibitRoomClientProps) {
         return;
       }
 
+      // Force desktop rendering width for high quality PDF capture regardless of viewport size
+      const originalWidth = nodeMapEl.style.width;
+      const originalMinWidth = nodeMapEl.style.minWidth;
+      const originalMaxWidth = nodeMapEl.style.maxWidth;
+      nodeMapEl.style.width = "900px";
+      nodeMapEl.style.minWidth = "900px";
+      nodeMapEl.style.maxWidth = "900px";
+
+      // Wait briefly for layout adjustment
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       // Render Node Map to Canvas
       const mapCanvas = await html2canvas(nodeMapEl, {
         scale: 3,
@@ -157,6 +168,11 @@ export default function ExhibitRoomClient({ id }: ExhibitRoomClientProps) {
           }
         }
       });
+
+      // Restore original dimensions
+      nodeMapEl.style.width = originalWidth;
+      nodeMapEl.style.minWidth = originalMinWidth;
+      nodeMapEl.style.maxWidth = originalMaxWidth;
 
       const mapImgData = mapCanvas.toDataURL("image/png");
 
