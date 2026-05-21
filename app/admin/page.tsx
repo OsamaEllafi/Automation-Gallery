@@ -37,13 +37,14 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(`Are you sure you want to delete exhibit ${id}? This action is permanent.`)) {
+  const handleDelete = async (workflow: Workflow) => {
+    if (!workflow.id) return;
+    if (!confirm(`Are you sure you want to delete exhibit ${workflow.workflow_id} (${workflow.name})? This action is permanent.`)) {
       return;
     }
-    setDeleteLoading(id);
+    setDeleteLoading(workflow.id);
     try {
-      await deleteWorkflow(id);
+      await deleteWorkflow(workflow.id);
       refresh(); // Reload workflows list
     } catch (err) {
       console.error("Failed to delete workflow:", err);
@@ -239,17 +240,17 @@ export default function AdminDashboard() {
                                   <FaEdit size={14} />
                                 </Link>
                                 <button
-                                  onClick={() => handleDelete(workflow.workflow_id)}
-                                  className="text-dim hover:text-red-600 transition-colors"
-                                  title="Delete Exhibit"
-                                  disabled={deleteLoading === workflow.workflow_id}
-                                >
-                                  {deleteLoading === workflow.workflow_id ? (
-                                    <div className="w-3.5 h-3.5 border border-red-600 border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <FaTrash size={13} />
-                                  )}
-                                </button>
+                                   onClick={() => handleDelete(workflow)}
+                                   className="text-dim hover:text-red-600 transition-colors"
+                                   title="Delete Exhibit"
+                                   disabled={deleteLoading === workflow.id}
+                                 >
+                                   {deleteLoading === workflow.id ? (
+                                     <div className="w-3.5 h-3.5 border border-red-600 border-t-transparent rounded-full animate-spin" />
+                                   ) : (
+                                     <FaTrash size={13} />
+                                   )}
+                                 </button>
                               </div>
                             </td>
                           </tr>

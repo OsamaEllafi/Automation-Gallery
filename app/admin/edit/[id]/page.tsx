@@ -12,19 +12,31 @@ export default async function Page({ params }: PageProps) {
 export async function generateStaticParams() {
   try {
     const res = await fetch("https://firestore.googleapis.com/v1/projects/taskmaster-todo-8e733/databases/(default)/documents/workflows");
-    if (!res.ok) {
+    const paramsList: Array<{ id: string }> = [];
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (data.documents) {
+        // Sort documents by created_at or createTime ascending
+        const docs = [...data.documents].sort((a: any, b: any) => {
+          const timeA = a.fields?.created_at?.timestampValue || a.createTime || "";
+          const timeB = b.fields?.created_at?.timestampValue || b.createTime || "";
+          return timeA.localeCompare(timeB);
+        });
+        
+        docs.forEach((doc: any, index: number) => {
+          paramsList.push({ id: `WF-${String(index + 1).padStart(3, '0')}` });
+        });
+      }
+    } else {
       console.warn("Firestore REST API response is not OK:", res.status);
-      return [];
     }
-    const data = await res.json();
-    if (!data.documents) return [];
-    return data.documents.map((doc: any) => {
-      const nameParts = doc.name.split('/');
-      const id = nameParts[nameParts.length - 1];
-      return { id };
-    });
+    
+    // Add "fallback" parameter to build the client-side fallback route
+    paramsList.push({ id: "fallback" });
+    return paramsList;
   } catch (err) {
     console.error("Failed to generate static params for edit page:", err);
-    return [];
+    return [{ id: "fallback" }];
   }
 }

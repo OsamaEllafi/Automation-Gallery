@@ -5,57 +5,124 @@ import { Workflow, SiteStats, ContactMessage } from "@/types/workflow";
 // Workflows Collection
 export const WORKFLOWS_COLLECTION = "workflows";
 
+export async function getAllWorkflowsWithDynamicIds(): Promise<Workflow[]> {
+  const q = query(collection(db, WORKFLOWS_COLLECTION));
+  const querySnapshot = await getDocs(q);
+  const workflows = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      created_at: data.created_at || Timestamp.now()
+    } as Workflow;
+  });
+  
+  // Sort ascending by creation time to assign sequential IDs chronologically
+  workflows.sort((a, b) => {
+    const timeA = a.created_at instanceof Timestamp ? a.created_at.toMillis() : new Date(a.created_at || 0).getTime();
+    const timeB = b.created_at instanceof Timestamp ? b.created_at.toMillis() : new Date(b.created_at || 0).getTime();
+    return timeA - timeB;
+  });
+  
+  // Map dynamic workflow_id
+  return workflows.map((w, index) => ({
+    ...w,
+    workflow_id: `WF-${String(index + 1).padStart(3, '0')}`
+  }));
+}
+
 export async function getWorkflow(id: string): Promise<Workflow | null> {
-  const docRef = doc(db, WORKFLOWS_COLLECTION, id);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as Workflow;
-  }
-  return null;
+  const workflows = await getAllWorkflowsWithDynamicIds();
+  const found = workflows.find(w => w.workflow_id === id || w.id === id);
+  return found || null;
 }
 
 export async function getAllWorkflows(): Promise<Workflow[]> {
-  const q = query(collection(db, WORKFLOWS_COLLECTION), orderBy("created_at", "desc"));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
+  const workflows = await getAllWorkflowsWithDynamicIds();
+  // Return in descending order (newest first)
+  return [...workflows].sort((a, b) => {
+    const timeA = a.created_at instanceof Timestamp ? a.created_at.toMillis() : new Date(a.created_at || 0).getTime();
+    const timeB = b.created_at instanceof Timestamp ? b.created_at.toMillis() : new Date(b.created_at || 0).getTime();
+    return timeB - timeA;
+  });
 }
 
 export async function getLiveWorkflows(pageSize: number = 9, lastDoc?: QueryDocumentSnapshot<DocumentData>): Promise<{ workflows: Workflow[], lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
-  let q;
-  if (lastDoc) {
-    q = query(
-      collection(db, WORKFLOWS_COLLECTION),
-      where("status", "==", "live"),
-      orderBy("created_at", "desc"),
-      startAfter(lastDoc),
-      limit(pageSize)
-    );
-  } else {
-    q = query(
-      collection(db, WORKFLOWS_COLLECTION),
-      where("status", "==", "live"),
-      orderBy("created_at", "desc"),
-      limit(pageSize)
-    );
-  }
-
+  // Fetch all documents to assign dynamic IDs chronologically
+  const q = query(collection(db, WORKFLOWS_COLLECTION));
   const querySnapshot = await getDocs(q);
-  const workflows = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
-  const newLastDoc = querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null;
   
-  return { workflows, lastDoc: newLastDoc };
+  const snapMap = new Map<string, QueryDocumentSnapshot<DocumentData>>();
+  querySnapshot.docs.forEach(doc => {
+    snapMap.set(doc.id, doc);
+  });
+  
+  const workflows = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      created_at: data.created_at || Timestamp.now()
+    } as Workflow;
+  });
+  
+  // Sort ascending by creation time to assign sequential IDs chronologically
+  workflows.sort((a, b) => {
+    const timeA = a.created_at instanceof Timestamp ? a.created_at.toMillis() : new Date(a.created_at || 0).getTime();
+    const timeB = b.created_at instanceof Timestamp ? b.created_at.toMillis() : new Date(b.created_at || 0).getTime();
+    return timeA - timeB;
+  });
+  
+  // Assign dynamic workflow_id
+  const workflowsWithIds = workflows.map((w, index) => ({
+    ...w,
+    workflow_id: `WF-${String(index + 1).padStart(3, '0')}`
+  }));
+  
+  // Filter by status == live
+  const liveWorkflows = workflowsWithIds.filter(w => w.status === "live");
+  
+  // Sort live workflows by created_at descending (newest first)
+  liveWorkflows.sort((a, b) => {
+    const timeA = a.created_at instanceof Timestamp ? a.created_at.toMillis() : new Date(a.created_at || 0).getTime();
+    const timeB = b.created_at instanceof Timestamp ? b.created_at.toMillis() : new Date(b.created_at || 0).getTime();
+    return timeB - timeA;
+  });
+  
+  // Find start index based on lastDoc
+  let startIndex = 0;
+  if (lastDoc) {
+    const lastDocId = lastDoc.id;
+    const index = liveWorkflows.findIndex(w => w.id === lastDocId);
+    if (index !== -1) {
+      startIndex = index + 1;
+    }
+  }
+  
+  // Slice page
+  const pageWorkflows = liveWorkflows.slice(startIndex, startIndex + pageSize);
+  
+  // Get last doc snapshot for pagination
+  let newLastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+  if (pageWorkflows.length > 0) {
+    const lastPageItem = pageWorkflows[pageWorkflows.length - 1];
+    newLastDoc = snapMap.get(lastPageItem.id!) || null;
+  }
+  
+  return { workflows: pageWorkflows, lastDoc: newLastDoc };
 }
 
 export async function saveWorkflow(workflow: Partial<Workflow>): Promise<void> {
-  if (!workflow.workflow_id) throw new Error("Workflow ID is required");
+  const docRef = workflow.id 
+    ? doc(db, WORKFLOWS_COLLECTION, workflow.id) 
+    : doc(collection(db, WORKFLOWS_COLLECTION));
   
-  const docRef = doc(db, WORKFLOWS_COLLECTION, workflow.workflow_id);
   const dataToSave = {
     ...workflow,
+    id: docRef.id,
     updated_at: Timestamp.now(),
   };
   
-  // If it's new
   if (!workflow.created_at) {
     dataToSave.created_at = Timestamp.now();
   }

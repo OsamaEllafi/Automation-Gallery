@@ -114,16 +114,8 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Auto-generate workflow ID if new and name changes
-  useEffect(() => {
-    if (!isEditing && !workflowId && name) {
-      const cleanName = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .slice(0, 20);
-      setWorkflowId(`WF-${cleanName}`);
-    }
-  }, [name, isEditing, workflowId]);
+  // Workflow ID is now dynamically assigned chronologically on retrieval.
+
 
   // Automatically sync totalNodes count with the number of nodes in the builder
   useEffect(() => {
@@ -177,8 +169,8 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
 
     const activeStatus = forceStatus || status;
 
-    if (!workflowId || !name || !shortDesc) {
-      setMessage({ type: "error", text: "Please fill in all required fields (Workflow ID, Name, Short Description)." });
+    if (!name || !shortDesc) {
+      setMessage({ type: "error", text: "Please fill in all required fields (Name, Short Description)." });
       setLoading(false);
       return;
     }
@@ -187,7 +179,8 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
       const finalCategory = category === "Other" && customCategory ? customCategory : category;
 
       const payload: Partial<Workflow> = {
-        workflow_id: workflowId.trim().toUpperCase(),
+        id: initialData?.id || undefined,
+        workflow_id: isEditing ? workflowId : "PENDING",
         name: name.trim(),
         short_description: shortDesc.trim(),
         long_description: longDesc.trim(),
@@ -247,15 +240,10 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="flex flex-col gap-2">
-              <label className="font-[family-name:var(--font-inter)] text-xs text-dim uppercase tracking-wider">Workflow ID*</label>
-              <input 
-                type="text" 
-                className="bg-black/5 border border-glass rounded-xl px-4 py-3 font-[family-name:var(--font-inter)] text-sm focus:outline-none focus:border-primary/30"
-                placeholder="e.g. WF-004"
-                value={workflowId}
-                onChange={(e) => setWorkflowId(e.target.value)}
-                disabled={isEditing}
-              />
+              <label className="font-[family-name:var(--font-inter)] text-xs text-dim uppercase tracking-wider">Workflow ID</label>
+              <div className="bg-black/10 border border-glass rounded-xl px-4 py-3 font-[family-name:var(--font-inter)] text-sm text-dim select-none">
+                {isEditing ? workflowId : "Auto-assigned on publish"}
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-[family-name:var(--font-inter)] text-xs text-dim uppercase tracking-wider">Workflow Name*</label>

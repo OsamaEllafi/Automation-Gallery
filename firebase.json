@@ -14,11 +14,11 @@
     "rewrites": [
       {
         "source": "/gallery/:id",
-        "destination": "/gallery/[id]/index.html"
+        "destination": "/gallery/fallback.html"
       },
       {
         "source": "/admin/edit/:id",
-        "destination": "/admin/edit/[id]/index.html"
+        "destination": "/admin/edit/fallback.html"
       }
     ]
   }

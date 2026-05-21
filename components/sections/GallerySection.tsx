@@ -86,7 +86,10 @@ export default function GallerySection({ featuredOnly = false }: GallerySectionP
   // Filter and sort logic
   const filteredWorkflows = useMemo(() => {
     if (featuredOnly) {
-      return liveRecentWorkflows.filter(w => w.featured && w.status === "live").slice(0, 3);
+      return [...liveRecentWorkflows]
+        .filter(w => w.status === "live")
+        .sort((a, b) => b.workflow_id.localeCompare(a.workflow_id))
+        .slice(0, 3);
     }
 
     // Filter by live status for public directory
@@ -119,12 +122,7 @@ export default function GallerySection({ featuredOnly = false }: GallerySectionP
 
     // Sorting logic
     if (sortBy === "newest") {
-      // already sorted by created_at desc in Firestore, but good to enforce
-      result = [...result].sort((a, b) => {
-        const dateA = a.created_at ? new Date(a.created_at instanceof Date ? a.created_at : (a.created_at as any).seconds * 1000) : new Date(0);
-        const dateB = b.created_at ? new Date(b.created_at instanceof Date ? b.created_at : (b.created_at as any).seconds * 1000) : new Date(0);
-        return dateB.getTime() - dateA.getTime();
-      });
+      result = [...result].sort((a, b) => b.workflow_id.localeCompare(a.workflow_id));
     } else if (sortBy === "nodes") {
       result = [...result].sort((a, b) => (b.total_nodes || 0) - (a.total_nodes || 0));
     } else if (sortBy === "automation") {
@@ -207,7 +205,7 @@ export default function GallerySection({ featuredOnly = false }: GallerySectionP
           {featuredOnly ? "THE SELECTION" : "THE COLLECTION"}
         </span>
         <h2 className="font-[family-name:var(--font-orbitron)] text-[2.5rem] font-bold text-primary mb-6">
-          {featuredOnly ? "FEATURED EXHIBITS" : "ALL EXHIBITED WORKS"}
+          {featuredOnly ? "LATEST EXHIBITS" : "ALL EXHIBITED WORKS"}
         </h2>
         <div className="w-12 h-[3px] bg-primary/30 rounded-full" />
       </div>
