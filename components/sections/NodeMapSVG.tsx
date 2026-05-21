@@ -350,7 +350,7 @@ export default function NodeMapSVG({ nodes, primaryIntegration }: NodeMapSVGProp
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="absolute pointer-events-none bg-black/95 border border-glass px-3 py-1.5 rounded-lg text-[10px] font-[family-name:var(--font-orbitron)] text-primary uppercase tracking-wider"
+              className="absolute pointer-events-none bg-black/95 border border-glass px-3 py-1.5 rounded-lg text-[10px] font-[family-name:var(--font-orbitron)] text-white uppercase tracking-wider"
               style={{
                 left: `${(hoveredNode.x / canvasWidth) * 100}%`,
                 top: `${(hoveredNode.y / canvasHeight) * 100 - 15}%`,
