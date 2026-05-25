@@ -1,0 +1,59 @@
+{
+  "nodes": [
+    {
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300]
+    },
+    {
+      "name": "Format Customer Data",
+      "type": "n8n-nodes-base.set",
+      "position": [450, 300]
+    },
+    {
+      "name": "Gmail Support Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [650, 300]
+    },
+    {
+      "name": "Post Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Customer Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Customer Data": {
+      "main": [
+        [
+          {
+            "node": "Gmail Support Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Support Email": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

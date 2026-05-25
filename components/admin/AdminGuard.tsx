@@ -15,8 +15,14 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isBypassed, setIsBypassed] = useState(false);
+  const [isDev, setIsDev] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+      setIsDev(true);
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         // Validate admin email
@@ -72,7 +78,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  if (!user) {
+  if (!user && !isBypassed) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f5f6f8] px-6 py-12">
         <motion.div
@@ -108,6 +114,18 @@ export default function AdminGuard({ children }: AdminGuardProps) {
           >
             <FaGoogle size={14} /> SIGN IN WITH GOOGLE
           </button>
+
+          {isDev && (
+            <div className="mt-4 pt-4 border-t border-glass/40">
+              <button
+                type="button"
+                onClick={() => setIsBypassed(true)}
+                className="w-full border border-dashed border-glass hover:bg-black/5 hover:text-primary transition-all text-xs font-[family-name:var(--font-orbitron)] text-dim uppercase tracking-wider py-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FaLock className="opacity-60" size={10} /> Bypass (Local Development Mode)
+              </button>
+            </div>
+          )}
         </motion.div>
       </div>
     );

@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Workflow, NodeMapItem } from "@/types/workflow";
-import { FaTrash, FaPlus, FaSave, FaEye, FaArrowLeft, FaCheck, FaCopy, FaUpload, FaWrench, FaArrowRight, FaTimes } from "react-icons/fa";
+import { FaTrash, FaPlus, FaSave, FaEye, FaArrowLeft, FaCheck, FaCopy, FaUpload, FaWrench, FaArrowRight, FaTimes, FaFileCode } from "react-icons/fa";
 import Link from "next/link";
 import NodeMapSVG from "@/components/sections/NodeMapSVG";
 import { motion, AnimatePresence } from "framer-motion";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
+
 
 // Drag and drop imports
 import {
@@ -168,6 +171,11 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
   // n8n Import states
   const [n8nJsonInput, setN8nJsonInput] = useState("");
   const [showN8nImportModal, setShowN8nImportModal] = useState(false);
+  const [jsonFile, setJsonFile] = useState<File | null>(null);
+  const [jsonFilename, setJsonFilename] = useState<string>("");
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Workflow ID is now dynamically assigned chronologically on retrieval.
 
@@ -330,6 +338,126 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
     }
   };
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const processJsonFile = (file: File) => {
+    if (!file) return;
+    if (file.type !== "application/json" && !file.name.endsWith(".json")) {
+      alert("Please upload a valid JSON file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result;
+      if (typeof text === "string") {
+        try {
+          const parsed = JSON.parse(text);
+          let n8nNodes = parsed.nodes;
+          if (!n8nNodes && Array.isArray(parsed)) {
+            n8nNodes = parsed;
+          }
+          if (!Array.isArray(n8nNodes)) {
+            throw new Error("Could not find nodes array in JSON.");
+          }
+
+          let detectedTrigger = triggerType;
+          const mappedNodes: NodeMapItem[] = n8nNodes.map((n: any, idx: number) => {
+            const label = n.name || n.type || "n8n Node";
+            const typeStr = n.type || "";
+            let type: NodeMapItem["type"] = "action";
+            
+            const lowerType = typeStr.toLowerCase();
+            const lowerLabel = label.toLowerCase();
+            if (lowerType.includes("trigger") || lowerType.includes("webhook") || lowerType.includes("cron") || lowerType.includes("interval")) {
+              type = "trigger";
+              
+              if (lowerType.includes("webhook") || lowerLabel.includes("webhook")) {
+                detectedTrigger = "Webhook";
+              } else if (lowerType.includes("cron") || lowerType.includes("interval") || lowerType.includes("schedule") || lowerLabel.includes("cron") || lowerLabel.includes("schedule")) {
+                detectedTrigger = "Scheduled";
+              } else if (lowerType.includes("manual") || lowerType.includes("start") || lowerLabel.includes("manual") || lowerLabel.includes("start")) {
+                detectedTrigger = "Manual";
+              } else {
+                detectedTrigger = "Event";
+              }
+            } else if (lowerType.includes("if") || lowerType.includes("switch") || lowerType.includes("filter")) {
+              type = "condition";
+            } else if (lowerType.includes("complete") || lowerType.includes("end") || lowerType.includes("respond")) {
+              type = "output";
+            } else if (
+              lowerType.includes("slack") || lowerType.includes("gmail") || lowerType.includes("sheet") || 
+              lowerType.includes("notion") || lowerType.includes("trello") || lowerType.includes("github") || 
+              lowerType.includes("openai") || lowerType.includes("database") || lowerType.includes("postgres") ||
+              lowerType.includes("airtable") || lowerType.includes("whatsapp")
+            ) {
+              type = "integration";
+            }
+            
+            return {
+              id: `node-${Date.now()}-${idx}-${Math.random()}`,
+              label,
+              type,
+              order: idx + 1,
+              description: `Imported from n8n: ${n.type}`
+            };
+          });
+
+          if (mappedNodes.length > 0) {
+            setNodes(mappedNodes);
+            setTriggerType(detectedTrigger);
+            setJsonFile(file);
+            setJsonFilename(file.name);
+            setMessage({ type: "success", text: `Successfully parsed and imported ${mappedNodes.length} nodes from ${file.name}.` });
+          }
+        } catch (err: any) {
+          alert(`Invalid JSON format: ${err.message}`);
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processJsonFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processJsonFile(e.target.files[0]);
+    }
+  };
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const clearStagedFile = () => {
+    setJsonFile(null);
+    setJsonFilename("");
+  };
+
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -368,6 +496,17 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
     }
 
     try {
+      let finalJsonUrl = jsonExportUrl.trim() || null;
+
+      if (jsonFile) {
+        const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const filename = `${safeName}-${Date.now()}.json`;
+        const storageRef = ref(storage, `workflows/json/${filename}`);
+        
+        await uploadBytes(storageRef, jsonFile);
+        finalJsonUrl = await getDownloadURL(storageRef);
+      }
+
       const finalCategory = category === "Other" && customCategory ? customCategory : category;
 
       const payload: Partial<Workflow> = {
@@ -394,7 +533,7 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
         solution: solution.trim(),
         notes: notes.trim() || null,
         demo_video_url: demoVideoUrl.trim() || null,
-        json_export_url: jsonExportUrl.trim() || null,
+        json_export_url: finalJsonUrl,
         related_workflow_ids: relatedWorkflowIdsInput.split(",").map(id => id.trim().toUpperCase()).filter(Boolean),
         created_at: initialData?.created_at || undefined
       };
@@ -410,6 +549,7 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
     } finally {
       setLoading(false);
     }
+
   };
 
   return (
@@ -651,16 +791,98 @@ export default function WorkflowForm({ initialData, onSave, isEditing = false }:
             </div>
           </div>
 
-          {/* Import n8n JSON modal toggle */}
-          <div className="flex gap-4 mb-6 justify-end">
-            <button
-              type="button"
-              onClick={() => setShowN8nImportModal(true)}
-              className="px-4 py-2 border border-glass bg-primary/5 text-primary text-[10px] font-[family-name:var(--font-orbitron)] uppercase rounded-xl hover:bg-primary/10 transition-colors flex items-center gap-1.5"
-            >
-              <FaUpload size={10} /> Import from n8n JSON
-            </button>
+          {/* n8n JSON file importer and uploader */}
+          <div className="mb-6 flex flex-col gap-4">
+            <label className="font-[family-name:var(--font-orbitron)] text-[10px] text-dim uppercase tracking-wider block">
+              n8n Workflow JSON Integration:
+            </label>
+
+            {jsonFile ? (
+              <div className="border border-glass bg-black/40 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                    <FaFileCode size={20} />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="font-[family-name:var(--font-orbitron)] text-xs font-bold text-primary truncate max-w-[250px]">
+                      {jsonFilename}
+                    </span>
+                    <span className="font-[family-name:var(--font-inter)] text-[9px] text-dim">
+                      Staged n8n export file (Size: {formatBytes(jsonFile.size)}) — Node map generated
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={clearStagedFile}
+                    className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-lg transition-colors border border-red-500/10"
+                    title="Remove staged JSON file"
+                  >
+                    <FaTrash size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={triggerFileSelect}
+                className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 min-h-[110px] ${
+                  isDragActive 
+                    ? "border-primary bg-primary/10" 
+                    : "border-glass bg-black/5 hover:bg-black/10 hover:border-glass-hover"
+                }`}
+              >
+                <input 
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".json"
+                  onChange={handleFileChange}
+                />
+                <FaUpload className={`text-xl transition-transform ${isDragActive ? "scale-110 text-primary" : "text-dim"}`} />
+                <div>
+                  <p className="font-[family-name:var(--font-orbitron)] text-xs text-primary font-bold uppercase tracking-wider">
+                    Drag & Drop n8n JSON file here
+                  </p>
+                  <p className="font-[family-name:var(--font-inter)] text-[9px] text-dim mt-0.5">
+                    or click to browse (.json export file)
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Display current cloud JSON url if any */}
+            {jsonExportUrl && !jsonFile && (
+              <div className="text-[10px] text-dim font-[family-name:var(--font-inter)] bg-[#10b981]/5 border border-[#10b981]/10 rounded-xl px-4 py-2 flex items-center justify-between">
+                <span>
+                  ✓ Current workflow JSON file is stored on Firebase Cloud Storage.
+                </span>
+                <a 
+                  href={jsonExportUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary font-bold hover:underline uppercase tracking-wider"
+                >
+                  Download File
+                </a>
+              </div>
+            )}
+
+            {/* Clipboard fallback button */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowN8nImportModal(true)}
+                className="px-3.5 py-1.5 border border-glass/60 bg-neutral-900 text-dim hover:text-primary text-[9px] font-[family-name:var(--font-orbitron)] uppercase rounded-lg hover:border-primary/40 transition-colors flex items-center gap-1.5"
+              >
+                Or Paste JSON Text
+              </button>
+            </div>
           </div>
+
 
           <DndContext
             sensors={sensors}
